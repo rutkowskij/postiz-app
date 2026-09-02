@@ -2,6 +2,7 @@ import {
   AuthProvider,
   AuthProviderAbstract,
 } from '@gitroom/backend/services/auth/providers.interface';
+import { randomBytes } from 'crypto';
 
 @AuthProvider({ provider: 'GENERIC' })
 export class OauthProvider extends AuthProviderAbstract {
@@ -43,6 +44,12 @@ export class OauthProvider extends AuthProviderAbstract {
       scope: 'openid profile email',
       response_type: 'code',
       redirect_uri: `${frontendUrl}/settings`,
+      // Spec-compliant OIDC providers (Authelia, Authentik, Pocket ID,
+      // Cloudflare Access) reject authorize requests without a `state`
+      // of sufficient entropy. The callback flow ignores the echoed
+      // value, so a random one satisfies the requirement without
+      // breaking existing providers.
+      state: randomBytes(16).toString('hex'),
     });
 
     return `${authUrl}?${params.toString()}`;
